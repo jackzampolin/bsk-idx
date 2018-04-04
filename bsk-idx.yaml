@@ -1,0 +1,9 @@
+bsk:
+  host: https://node.blockstack.org:6263
+db:
+  driver: mongo
+  connection: localhost
+  batchSize: 10
+  batchWorkers: 5
+idx:
+  concurrency: 10
