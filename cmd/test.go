@@ -15,40 +15,32 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/gob"
-	"fmt"
-	"log"
-	"net/http"
+	"encoding/json"
+	"io/ioutil"
 
 	"github.com/jackzampolin/bsk-idx/indexer"
 	"github.com/spf13/cobra"
 )
 
-func encodeStringArray(strs []string) []byte {
-	buf := bytes.NewBuffer([]byte{})
-	enc := gob.NewEncoder(buf)
-	enc.Encode(strs)
-	return buf.Bytes()
-}
-
-func decodeStringArray(byt []byte) []string {
-	return []string{}
-}
-
-// serveCmd represents the serve command
-var serveCmd = &cobra.Command{
-	Use:   "serve",
+// testCmd represents the test command
+var testCmd = &cobra.Command{
+	Use:   "test",
 	Short: "A brief description of your command",
 	Run: func(cmd *cobra.Command, args []string) {
-		idx := indexer.NewIndexer(cfg, []string{})
-		go idx.Index()
-		http.HandleFunc("/", idx.ST.HandleStats)
-		log.Printf("[server] Listening for signals on port :%d", cfg.IDX.Port)
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.IDX.Port), nil))
+		out, err := ioutil.ReadFile("names.json")
+		if err != nil {
+			panic(err)
+		}
+		names := []string{}
+		err = json.Unmarshal(out, &names)
+		if err != nil {
+			panic(err)
+		}
+		idx := indexer.NewIndexer(cfg, names)
+		idx.Zonefiles()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(testCmd)
 }

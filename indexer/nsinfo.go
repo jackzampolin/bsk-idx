@@ -1,4 +1,4 @@
-package cmd
+package indexer
 
 import "fmt"
 
@@ -13,7 +13,7 @@ func (idx *Indexer) GetNSInfo() (NSInfo, error) {
 	}
 
 	// Record this number in stats map
-	idx.Record("namespaces", len(ns.Namespaces))
+	idx.ST.Rec("namespaces", len(ns.Namespaces))
 
 	// Fetch the number of names in each namespace
 	for _, namespace := range ns.Namespaces {
@@ -21,7 +21,7 @@ func (idx *Indexer) GetNSInfo() (NSInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		idx.Record(fmt.Sprintf("namespace/%s", namespace), num.Count)
+		idx.ST.Rec(fmt.Sprintf("namespace/%s/names", namespace), num.Count)
 		out[namespace] = num.Count
 	}
 	return NSInfo(out), nil

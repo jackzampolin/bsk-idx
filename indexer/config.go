@@ -1,4 +1,4 @@
-package cmd
+package indexer
 
 import (
 	"encoding/json"
