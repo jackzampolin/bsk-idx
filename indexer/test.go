@@ -6,9 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
-
-	"github.com/dgrijalva/jwt-go"
 )
 
 // Zonefiles does the things
@@ -16,16 +13,15 @@ import (
 func (idx *Indexer) Zonefiles() {
 	for _, n := range idx.names {
 		profile := idx.GetProfile(n)
-		if profile != nil {
-			log.Println(profile.getPubKey(), n)
-			out := strings.Split(profile.Token, ".")
-			for _, o := range out {
-				dec, err := jwt.DecodeSegment(o)
-				if err != nil {
-					panic(err)
-				}
-				log.Println(string(dec))
-			}
+		// if err := profile.Validate(); err == nil {
+		// 	err := idx.DB.UpsertProfile(n, profile.DecodedToken.Payload.Claim)
+		// 	if err != nil {
+		// 		log.Println("ERROR INSERTING PROFILE", err)
+		// 	}
+		// }
+		err := idx.DB.UpsertProfile(n, profile.DecodedToken.Payload.Claim)
+		if err != nil {
+			log.Println("ERROR INSERTING PROFILE", err)
 		}
 	}
 }

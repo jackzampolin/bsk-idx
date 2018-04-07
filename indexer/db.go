@@ -10,6 +10,7 @@ import (
 type DB interface {
 	UpsertNameZonefile(name, zonefile string) error
 	FetchZonefile(name string) (NameZonefile, error)
+	UpsertProfile(name string, profile Profile) error
 }
 
 // NameZonefile represents a return from the database for fetching a name/zonefile pair

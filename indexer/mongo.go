@@ -53,6 +53,23 @@ func (mdb *MongoDB) FetchZonefile(name string) (NameZonefile, error) {
 	return zf, err
 }
 
+// UpsertProfile takes a name and a profile and inserts it as {"_id": name, "profile": profile}
+func (mdb *MongoDB) UpsertProfile(name string, profile Profile) error {
+	session := mdb.Session.Clone()
+	defer session.Close()
+	_, err := session.DB(mdb.Database).C("profiles").Upsert(bson.M{"_id": name}, bson.M{"_id": name, "profile": profile})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// NameProfileMongo models a name profile pairing
+type NameProfileMongo struct {
+	Name    string  `bson:"_id"`
+	Profile Profile `bson:"profile"`
+}
+
 // NameZonefileMongo represents a name zonefile pairing
 // Contains methods for pulling out different types of resource records
 type NameZonefileMongo struct {
