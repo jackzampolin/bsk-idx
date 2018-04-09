@@ -9,6 +9,8 @@ import (
 // IndexerDB is the database driver interface for the Indexer
 type DB interface {
 	UpsertNameZonefile(name, zonefile string) error
+	ZonefilesCount() int
+	ProfilesCount() int
 	FetchZonefile(name string) (NameZonefile, error)
 	UpsertProfile(name string, profile Profile) error
 }

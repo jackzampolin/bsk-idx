@@ -11,6 +11,11 @@ import (
 	"github.com/miekg/dns"
 )
 
+const (
+	profilesCollection  = "profiles"
+	zonefilesCollection = "zonefiles"
+)
+
 // NewMongoDB returns a connected instance of the MongoDB Driver
 func NewMongoDB(cfg *Config) *MongoDB {
 	session, err := mgo.Dial(cfg.DB.Connection)
@@ -37,7 +42,7 @@ type MongoDB struct {
 func (mdb *MongoDB) UpsertNameZonefile(name, zonefile string) error {
 	session := mdb.Session.Clone()
 	defer session.Close()
-	_, err := session.DB(mdb.Database).C("zonefiles").Upsert(bson.M{"_id": name}, bson.M{"_id": name, "zonefile": zonefile})
+	_, err := session.DB(mdb.Database).C(zonefilesCollection).Upsert(bson.M{"_id": name}, bson.M{"_id": name, "zonefile": zonefile})
 	if err != nil {
 		return err
 	}
@@ -49,7 +54,8 @@ func (mdb *MongoDB) FetchZonefile(name string) (NameZonefile, error) {
 	session := mdb.Session.Clone()
 	defer session.Close()
 	zf := &NameZonefileMongo{}
-	err := session.DB(mdb.Database).C("zonefiles").Find(bson.M{"_id": name}).One(zf)
+	findFilter := bson.M{"_id": name}
+	err := session.DB(mdb.Database).C(zonefilesCollection).Find(findFilter).One(zf)
 	if err != nil {
 		return zf, err
 	}
@@ -60,11 +66,35 @@ func (mdb *MongoDB) FetchZonefile(name string) (NameZonefile, error) {
 func (mdb *MongoDB) UpsertProfile(name string, profile Profile) error {
 	session := mdb.Session.Clone()
 	defer session.Close()
-	_, err := session.DB(mdb.Database).C("profiles").Upsert(bson.M{"_id": name}, bson.M{"_id": name, "profile": profile})
+	upsertFilter := bson.M{"_id": name}
+	upsertData := bson.M{"_id": name, "profile": profile}
+	_, err := session.DB(mdb.Database).C(profilesCollection).Upsert(upsertFilter, upsertData)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// ZonefilesCount returns the count of all zonefiles
+func (mdb *MongoDB) ZonefilesCount() int {
+	session := mdb.Session.Clone()
+	defer session.Close()
+	count, err := session.DB(mdb.Database).C(zonefilesCollection).Count()
+	if err != nil {
+		return 0
+	}
+	return count
+}
+
+// ProfilesCount returns the count of all zonefiles
+func (mdb *MongoDB) ProfilesCount() int {
+	session := mdb.Session.Clone()
+	defer session.Close()
+	count, err := session.DB(mdb.Database).C(profilesCollection).Count()
+	if err != nil {
+		return 0
+	}
+	return count
 }
 
 // NameProfileMongo models a name profile pairing

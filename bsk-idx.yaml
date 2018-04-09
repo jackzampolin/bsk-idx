@@ -13,3 +13,5 @@ idx:
   concurrency: 10
   namefile: names.json
   statsPort: 8080
+  nameFetchTimeout: 5m
+  zonefileFetchTimeout: 10s

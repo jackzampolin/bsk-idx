@@ -20,7 +20,7 @@ func (idx *Indexer) GetAllZonefiles() {
 	// Limit number of calls to core to idx.Concurrency
 	sem := make(chan struct{}, idx.Conc)
 	var wg sync.WaitGroup
-	for _, name := range idx.names {
+	for _, name := range idx.names.current() {
 		sem <- struct{}{}
 		go idx.fetchNameDetails(name, zonefileHashNameChan, sem, &wg)
 	}

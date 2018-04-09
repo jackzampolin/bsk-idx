@@ -40,7 +40,9 @@ type DBConfig struct {
 
 // IDXConfig represents indexer specific configuration
 type IDXConfig struct {
-	StatsPort   int    `json:"statsPort"`
-	Concurrency int    `json:"concurrency"`
-	NameFile    string `json:"namefile"`
+	StatsPort            int           `json:"statsPort"`
+	Concurrency          int           `json:"concurrency"`
+	NameFile             string        `json:"namefile"`
+	NameFetchTimeout     time.Duration `json:"nameFetchTimeout"`
+	ZonefileFetchTimeout time.Duration `json:"zonefileFetchTimeout"`
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 )
 
 // ResolveIndexerNames loops through the `names` array on the indexer struct and pulls all the profiles for those names.s
@@ -16,10 +17,12 @@ func (idx *Indexer) ResolveIndexerNames() {
 	var wg sync.WaitGroup
 
 	// Loop over names and insert them
-	for _, n := range idx.names {
-		sem <- struct{}{}
-		wg.Add(1)
-		go resolveAndInsert(idx, n, &wg, sem)
+	for _, n := range idx.names.current() {
+		if n != "" {
+			sem <- struct{}{}
+			wg.Add(1)
+			go resolveAndInsert(idx, n, &wg, sem)
+		}
 	}
 
 	// Wait for all names to be resolved
@@ -32,12 +35,13 @@ func resolveAndInsert(idx *Indexer, name string, wg *sync.WaitGroup, sem chan st
 	if profile != nil && profile.DecodedToken.Payload.Claim.Type == "Person" {
 		err := idx.DB.UpsertProfile(name, profile.DecodedToken.Payload.Claim)
 		if err != nil {
-			log.Println("ERROR INSERTING PROFILE", err)
+			idx.ST.Rec("profiles.insert_error", 1)
 		}
-		log.Println("Inserted", name)
+		idx.ST.Rec("profiles.inserted", 1)
 	}
 	<-sem
 	wg.Done()
+	idx.ST.Rec("zonefiles.resolved", 1)
 }
 
 // GetProfile takes a name and returns the profile associated
@@ -46,19 +50,19 @@ func (idx *Indexer) GetProfile(n string) *ProfileTokenFile {
 	// First fetch the zonefile data from the databse
 	zf, err := idx.DB.FetchZonefile(n)
 	if err != nil {
-		idx.ST.Rec("profiles/zonefiles/invalid", 1)
+		idx.ST.Rec("profiles.zf_invalid", 1)
 		return nil
 	}
-	idx.ST.Rec("profiles/zonefile/fetch/success", 1)
+	idx.ST.Rec("profiles.zf_valid", 1)
 
 	// Pull the URI's URLs from the Zonefile
 	urls, err := zf.URL()
 	if err != nil {
-		idx.ST.Rec("profiles/zonefile/parse/error", 1)
+		idx.ST.Rec("profiles.zf_parse_error", 1)
 		return nil
 	}
 
-	idx.ST.Rec("profiles/zonefiles/parse/success", 1)
+	idx.ST.Rec("profiles.zf_parsed", 1)
 
 	// Loop over all URLs from URI records
 	profiles := []*ProfileTokenFile{}
@@ -66,8 +70,7 @@ func (idx *Indexer) GetProfile(n string) *ProfileTokenFile {
 		p, err := fetchProfile(url)
 		// This error could be an http, ioutil, or unmarshal
 		if err != nil {
-			log.Println("Failed fetch for", n)
-			idx.ST.Rec("profiles/fetch/error", 1)
+			idx.ST.Rec("profiles.fetch_error", 1)
 			continue
 		}
 
@@ -76,10 +79,10 @@ func (idx *Indexer) GetProfile(n string) *ProfileTokenFile {
 		if len(p) > 0 {
 			if p[0].ParentPublicKey != "" {
 				profiles = append(profiles, p[0])
-				idx.ST.Rec("profiles/fetch/success", 1)
+				idx.ST.Rec("profiles.fetch_success", 1)
 			} else if p[0].Token != "" {
 				profiles = append(profiles, p[0])
-				idx.ST.Rec("profiles/fetch/success", 1)
+				idx.ST.Rec("profiles.fetch_success", 1)
 			}
 			continue
 		}
@@ -90,7 +93,7 @@ func (idx *Indexer) GetProfile(n string) *ProfileTokenFile {
 
 	// Handle conditions
 	if len(profiles) > 1 {
-		log.Printf("MULTIPLE PROFILES FOR NAME %s, picking first one...", n)
+		idx.ST.Rec("profiles.multiple_profiles", 1)
 	} else if len(profiles) == 0 {
 		// If there is no profile, then return nil
 		return nil
@@ -103,7 +106,9 @@ func (idx *Indexer) GetProfile(n string) *ProfileTokenFile {
 // fetchProfile takes a URL and returns the JSON that was recieved back
 func fetchProfile(u *url.URL) ([]*ProfileTokenFile, error) {
 	p := make([]*ProfileTokenFile, 0)
-	res, err := http.Get(u.String())
+	client := http.DefaultClient
+	client.Timeout = 30 * time.Second
+	res, err := client.Get(u.String())
 	if err != nil {
 		return p, err
 	}

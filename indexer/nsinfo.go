@@ -1,5 +1,9 @@
 package indexer
 
+import (
+	"fmt"
+)
+
 // GetNSInfo returns information about all the namespaces
 func (idx *Indexer) GetNSInfo() (NSInfo, error) {
 	out := make(map[string]int, 0)
@@ -17,6 +21,7 @@ func (idx *Indexer) GetNSInfo() (NSInfo, error) {
 			return nil, err
 		}
 		out[namespace] = num.Count
+		idx.ST.Rec(fmt.Sprintf("namespaces.%s_count", namespace), num.Count)
 	}
 	return NSInfo(out), nil
 }
