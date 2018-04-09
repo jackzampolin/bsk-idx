@@ -1,27 +1,21 @@
 package indexer
 
-import "fmt"
-
 // GetNSInfo returns information about all the namespaces
 func (idx *Indexer) GetNSInfo() (NSInfo, error) {
 	out := make(map[string]int, 0)
 
 	// Fetch the list of namespaces
-	ns, err := idx.BSK.GetAllNamespaces()
+	ns, err := idx.GetAllNamespaces()
 	if err != nil {
 		return nil, err
 	}
 
-	// Record this number in stats map
-	idx.ST.Rec("namespaces", len(ns.Namespaces))
-
 	// Fetch the number of names in each namespace
 	for _, namespace := range ns.Namespaces {
-		num, err := idx.BSK.GetNumNamesInNamespace(namespace)
+		num, err := idx.GetNumNamesInNamespace(namespace)
 		if err != nil {
 			return nil, err
 		}
-		idx.ST.Rec(fmt.Sprintf("namespace/%s/names", namespace), num.Count)
 		out[namespace] = num.Count
 	}
 	return NSInfo(out), nil

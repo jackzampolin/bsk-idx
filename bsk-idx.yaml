@@ -1,9 +1,15 @@
 bsk:
-  host: https://node.blockstack.org:6263
+  host:
+    address: node.blockstack.org
+    port: 6263
+    scheme: https
+  retries: 3
+  timeout: 1s
 db:
   driver: mongo
   connection: localhost
-  batchSize: 10
-  batchWorkers: 5
+  database: bsk-idx
 idx:
   concurrency: 10
+  namefile: names.json
+  statsPort: 8080

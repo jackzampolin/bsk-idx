@@ -2,15 +2,25 @@ package indexer
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"sync"
 )
 
-// GetNames fetches all the names from the blockstack network and stores them in MongoDB as a cache
-// TODO: Fix when you are done
-func (idx *Indexer) GetNames() {
-	if len(idx.names) < 100 {
+// WriteNamesToFile writes the names on the Indexer into a file
+func (idx *Indexer) WriteNamesToFile(file string) {
+	out, err := json.Marshal(idx.names)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile(file, out, 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// GetAllNames fetches all the names from the blockstack network and stores them on the Indexer
+func (idx *Indexer) GetAllNames() {
+	if len(idx.names) < 10 {
 		// fetch Namespace info first then the names from the namespace
 		nsInfo, err := idx.GetNSInfo()
 		if err != nil {
@@ -23,13 +33,8 @@ func (idx *Indexer) GetNames() {
 		sem := make(chan struct{}, idx.Conc)
 		go idx.handleNameChan(namesChan)
 
-		// Range over the namespaces fetching the names
+		// Range over the namespaces fetching the names in seperate goroutines
 		for _, ns := range nsInfo.Namespaces() {
-
-			// Record stats for debugging
-			idx.ST.Rec("namePages/queued", nsInfo.Pages(ns))
-
-			// Create the namePages in a goroutine
 			for page := 0; page < nsInfo.Pages(ns); page++ {
 				sem <- struct{}{}
 				go idx.namePage(ns, page, namesChan, &wg, sem)
@@ -39,14 +44,6 @@ func (idx *Indexer) GetNames() {
 		// Wait for all name pages to return before updating the database
 		wg.Wait()
 		close(namesChan)
-		out, err := json.Marshal(idx.names)
-		if err != nil {
-			panic(err)
-		}
-		err = ioutil.WriteFile("names.json", out, 0644)
-		if err != nil {
-			panic(err)
-		}
 	}
 }
 
@@ -54,18 +51,12 @@ func (idx *Indexer) namePage(ns string, page int, namesChan chan []string, wg *s
 	// Increment the WaitGroup
 	wg.Add(1)
 
-	// Record this
-	idx.ST.Rec("namePages/created", 1)
-
 	// Fetch the page of names
-	names, err := idx.BSK.GetNamesInNamespace(ns, page*namePageSize, namePageSize)
+	names, err := idx.GetNamesInNamespace(ns, page*namePageSize, namePageSize)
 	if err != nil {
+		// NOTE: The above call is retried
 		panic(err)
 	}
-
-	// Record this
-	idx.ST.Rec(fmt.Sprintf("namespace/%s/fetched", ns), len(names.Names))
-	idx.ST.Rec("namePages/finished", 1)
 
 	// Send the names to get processed
 	namesChan <- names.Names

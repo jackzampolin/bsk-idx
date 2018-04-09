@@ -17,9 +17,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
-	"log"
-	"net/http"
 
 	"github.com/jackzampolin/bsk-idx/indexer"
 	"github.com/spf13/cobra"
@@ -42,10 +39,7 @@ var serveCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Run: func(cmd *cobra.Command, args []string) {
 		idx := indexer.NewIndexer(cfg, []string{})
-		go idx.Index()
-		http.HandleFunc("/", idx.ST.HandleStats)
-		log.Printf("[server] Listening for signals on port :%d", cfg.IDX.Port)
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.IDX.Port), nil))
+		idx.Index()
 	},
 }
 

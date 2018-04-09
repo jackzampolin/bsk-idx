@@ -162,7 +162,8 @@ type Image struct {
 // Claim contains social proofs and images
 type Profile struct {
 	Type      string     `json:"@type"`
-	Context   string     `json:@context,omitempty`
+	Context   string     `json:"@context,omitempty"`
+	Name      string     `json:"name,omitempty"`
 	Image     []Image    `json:"image,omitempty"`
 	Account   []Account  `json:"account,omitempty"`
 	Website   []Website  `json:"website,omitempty"`

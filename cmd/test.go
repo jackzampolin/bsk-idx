@@ -37,7 +37,7 @@ var testCmd = &cobra.Command{
 			panic(err)
 		}
 		idx := indexer.NewIndexer(cfg, names)
-		idx.Zonefiles()
+		idx.GetAllZonefiles()
 	},
 }
 

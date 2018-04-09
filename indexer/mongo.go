@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -28,6 +29,8 @@ type MongoDB struct {
 	Connection string
 	Database   string
 	Session    *mgo.Session
+
+	sync.Mutex
 }
 
 // UpsertNameZonefile takes a name and a zonefile and inserts it as {"_id": name, "zonefile": zonefile}
