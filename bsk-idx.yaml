@@ -15,3 +15,5 @@ idx:
   statsPort: 8080
   nameFetchTimeout: 5m
   zonefileFetchTimeout: 10s
+  retries: 3
+  timeout: 1s

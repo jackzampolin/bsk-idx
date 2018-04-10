@@ -27,9 +27,8 @@ func NewIndexer(cfg *Config, names []string) *Indexer {
 
 		names: &networkNames{n: make([]string, 0)},
 
-		// TODO: Bring these in through config
-		retries: 3,
-		timeout: 1 * time.Second,
+		retries: cfg.IDX.Retries,
+		timeout: cfg.IDX.Timeout,
 
 		config: cfg.IDX,
 	}

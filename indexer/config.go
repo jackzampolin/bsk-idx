@@ -42,7 +42,9 @@ type DBConfig struct {
 type IDXConfig struct {
 	StatsPort            int           `json:"statsPort"`
 	Concurrency          int           `json:"concurrency"`
+	Retries              int           `json:"retries"`
 	NameFile             string        `json:"namefile"`
+	Timeout              time.Duration `json:"timeout"`
 	NameFetchTimeout     time.Duration `json:"nameFetchTimeout"`
 	ZonefileFetchTimeout time.Duration `json:"zonefileFetchTimeout"`
 }
